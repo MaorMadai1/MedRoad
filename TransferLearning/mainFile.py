@@ -44,12 +44,13 @@ def DataPreProccess(data_dir, batch_size,seed = 0):
     val_dataloader = None #torch.utils.data.DataLoader(valset,batch_size,shuffle=True)
     return train_dataloader,val_dataloader
 
-def ExtractLayersFromYOLO(model):
-    backbone = model.model[:9]
-    neck = model.model[10:21]
-    head = model.model[22]
 
-    return backbone,neck,head
+def ExtractLayersFromYOLO(model):
+    backbone = model.model.model[:9]
+    neck = model.model.model[10:21]
+    head = model.model.model[22]
+
+    return backbone, neck, head
 
 def GetParamsList(layers):
     print("---Params to update---")
@@ -62,19 +63,21 @@ def GetParamsList(layers):
     print("-------Done-------")
     return params
 
+
 def InitModel(model):
     backbone, neck, head = ExtractLayersFromYOLO(model)
     FreezeLayer(backbone)
-    for layer in neck:
-        ReplaceConvToLora(layer)
-    for layer in head:
-        ReplaceConvToLora(layer)
+    # for layer in neck:
+    ReplaceConvToLora(neck)
+    # for layer in head:
+    ReplaceConvToLora(head)
 
     return model
 
 def TrainModel(model: YOLO, data_path, epochs, imgsz, batch_size, device, **kwargs):
     start_time = time.time()
-    metrics = model.train(data=datapath, epochs=epochs, imgsz=imgsz, batch_size=batch_size, device=device, **kwargs)
+    metrics = model.train(data=datapath, epochs=epochs, imgsz=imgsz, batch=batch_size, device=device,
+                          project="BoneFractureYolo8", name="retrain_v1", exist_ok=True, **kwargs)
     best_model = YOLO(Path(model.trainer.best))
     end_time = time.time()
     dt = end_time - start_time
@@ -89,7 +92,7 @@ def EvalModel():
 
 if __name__ == '__main__':
     #params:
-    datapath = '.'
+    datapath = "./../datasets/BoneFractureYolo8/data.yaml"
     lr = 0.00001
     momentum = 0.9
     criterion = nn.CrossEntropyLoss() #TODO - isn't it sometihng else?
