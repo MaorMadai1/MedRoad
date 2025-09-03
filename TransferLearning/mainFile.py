@@ -1,12 +1,13 @@
 # imports
 import torch.nn as nn
 import torch.utils.data
-from torchvision import transforms
+from sympy import false
 from ultralytics import YOLO
+import itertools
 from loralib import Conv2d as LoRAConv2d
+import loralib as lora
 import os
 import pandas as pd
-from pathlib import Path
 import time
 
 
@@ -22,8 +23,13 @@ class MedRoad:
 
     def init_model(self):
         MedRoad.freeze_layer(self.backbone)
-        MedRoad.replace_conv_to_LoRa(self.neck, self.lora_r_param)
-        MedRoad.replace_conv_to_LoRa(self.head, self.lora_r_param)
+        if(self.lora_r_param is not None):
+            MedRoad.replace_conv_to_LoRa(self.neck, self.lora_r_param)
+            MedRoad.replace_conv_to_LoRa(self.head, self.lora_r_param)
+        # lora.mark_only_lora_as_trainable(self.neck)
+        # lora.mark_only_lora_as_trainable(self.head)
+        total_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+        print(f'Total number of trainable parameters: {total_params}')
 
     def extract_layers_from_YOLO(self):
         self.backbone = self.model.model.model[:9]
@@ -38,12 +44,19 @@ class MedRoad:
 
     @staticmethod
     def replace_conv_to_LoRa(model, r=2):
-        for name, module in model.named_children():
-            if isinstance(module, nn.Conv2d):
-                model.conv = LoRAConv2d(module.in_channels, module.out_channels, kernel_size=module.kernel_size[0], r=r,
-                                        lora_alpha=0.5, lora_dropout=0.0, merge_weights=False)
+        for name, child in model.named_children():
+            if isinstance(child, nn.Conv2d):
+                lora_conv = LoRAConv2d(child.in_channels, child.out_channels, kernel_size=child.kernel_size[0], r=r,
+                                        lora_alpha=0.5, lora_dropout=0.0, stride=child.stride,
+                                       padding=child.padding, dilation=child.dilation, bias=child.bias is not None,
+                                       merge_weights=False)
+                lora_conv.conv.weight.data.copy_(child.weight.data)
+                if child.bias is not None:
+                    lora_conv.conv.bias.data.copy_(child.bias.data)
+                setattr(model, name, lora_conv)
             else:
-                MedRoad.replace_conv_to_LoRa(module, r)
+                MedRoad.replace_conv_to_LoRa(child, r)
+
 
     @staticmethod
     def get_params_list(layers):
@@ -159,48 +172,55 @@ def grid_search(data_path, out_path, weight_path, imgsz, device, save_period, pa
     df.to_csv(os.path.join(out_path, "grid_search_results.csv"), index=False)
     return df
 
-
 if __name__ == '__main__':
     # params:
-    data_path = "./../datasets/BoneFractureYolo8/data.yaml"
-    weight_path = "./../RoadDamageDetection/YOLOv8_Small_RDD.pt"
-    out_path = "./../BaselineResults"
+    data_path = "../MedRoad/datasets/GRAZPEDWRI-DX/data.yaml"
+    weight_path = "../RoadDamageDetection/YOLOv8_Small_RDD.pt"
+    out_path = "../BaselineResults"
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    imgsz = 640
 
-    # lr = 0.00001
-    # momentum = 0.9
-    criterion = nn.CrossEntropyLoss()  # TODO - isn't it sometihng else?
-    epochs = 20
-    batch_size = 16
-    r = 2
+    #sweeps:
+    epochs = [1]
+    batch_size = [16]
+    lorap = [8]
+    #cos_lr = [True,False]
+    #freeze = [1,2,3]
+    #lr0 = [1e-5,1e-5,1e-5]
+    #lrf = [0.01,0.001]
 
-    # Data-preprocess:
-    # dataloaders = DataPreProccess(datapath, batch_size, 1234)
-    imgsize = 640  # TODO: @maor find the size from the dataset
 
     # Init-the model
-    model = MedRoad(weight_path, lora_r_param=r)
-    model.train_model(data_path=data_path,
-                      out_path=out_path,
-                      epochs=epochs,
-                      imgsz=imgsize,
-                      batch_size=batch_size,
-                      device=device)
-    model.eval_model(data_path=data_path,
-                     out_path=out_path,
-                     imgsz=imgsize,
-                     batch_size=batch_size,
-                     device=device,
-                     save_txt=True,
-                     save_conf=True,
-                     save_json=True,
-                     verbose=True)
+    for e in epochs:
+        for bs in batch_size:
+            for r in lorap:
+                t = time.strftime("%Y-%m-%d_%H-%M-%S")
+                model = MedRoad(weight_path, lora_r_param=r)
+                model.model.train(data=data_path,
+                                  project=out_path,
+                                  name=f"TRAIN-time={t}-epochs={e}-batchsize={bs},lora={r}",
+                                  epochs=e,
+                                  imgsz=imgsz,
+                                  batch=bs,
+                                  device=device,
+                                  save=False
+                                  )
+                print("**********************")
+                for name, module in model.named_modules():
+                    if isinstance(module, lora.Conv2d):
+                        print("LoRAConv2d found at:", name)
+                total_params = sum(p.numel() for p in model.model.parameters() if p.requires_grad)
+                print(f'Total number of trainable parameters: {total_params}')
 
-    # Ideas:
-    # 1) "clean" train - just of this dataset
-    # 2) freeze all layers - what to do with the output dim? (num_of_classes)
-    # 3) use DoRA instead of LoRA
-
-    # newdata_path = "..."  # TODO
-    # # train
-    # model.train(data=_data, epochs=10, imgsz=640, batch=16, workers=4, project="BoneFractureYolo8", name="retrain_v1", exist_ok=True, freeze=10)
+                model.model.val(data=data_path,
+                                project=out_path,
+                                name=f"TEST-time={t}-epochs={e}-batchsize={bs},lora={r}",
+                                imgsz=imgsz,
+                                device=device,
+                                batch=bs,
+                                split='test',
+                                save_txt=True,
+                                save_conf=True,
+                                save_json=True,
+                                verbose=True,
+                                plots=True)
