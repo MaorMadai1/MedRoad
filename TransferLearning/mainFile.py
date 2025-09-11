@@ -172,7 +172,7 @@ def grid_search(data_path, out_path, weight_path, imgsz, device, save_period, pa
 if __name__ == '__main__':
     # params:
     data_path = "../datasets/GRAZPEDWRI-DX/data.yaml"
-    weight_path = "../RoadDamageDetection/YOLOv8_Small_RDD.pt"
+    weight_path = "../YOLOv8_Small_RDD.pt"
     out_path = "../BaselineResults"
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     imgsz = 640
@@ -204,7 +204,6 @@ if __name__ == '__main__':
                                       imgsz=imgsz,
                                       batch=bs,
                                       device=device,
-                                      save=False,
                                       freeze=f
                                       )
 

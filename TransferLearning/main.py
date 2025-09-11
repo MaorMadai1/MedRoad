@@ -1,12 +1,17 @@
-from mainFile import MedRoad
+import torch.nn as nn
 import torch.utils.data
+from ultralytics import YOLO
+import itertools
+from loralib import Conv2d as LoRAConv2d
 import loralib as lora
-import config
+import os
+import pandas as pd
 import time
-
+import config
+from mainFile import MedRoad
 
 data_path = "../datasets/GRAZPEDWRI-DX/data.yaml"
-weight_path = "../RoadDamageDetection/YOLOv8_Small_RDD.pt"
+weight_path = "../YOLOv8_Small_RDD.pt"
 out_path = "../BaselineResults"
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 imgsz = 640
@@ -16,7 +21,6 @@ epochs = [32]
 batch_size = [16]
 lorap = [32]
 freezes = [10, 9]
-# Global_R_LoRA = 16
 #cos_lr = [True,False]
 #freeze = [1,2,3]
 #lr0 = [1e-5,1e-5,1e-5]
