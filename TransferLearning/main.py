@@ -1,20 +1,22 @@
 from mainFile import MedRoad
 import torch.utils.data
 import loralib as lora
+import config
 import time
 
 
-data_path = "../MedRoad/datasets/GRAZPEDWRI-DX/data.yaml"
+data_path = "../datasets/GRAZPEDWRI-DX/data.yaml"
 weight_path = "../RoadDamageDetection/YOLOv8_Small_RDD.pt"
 out_path = "../BaselineResults"
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 imgsz = 640
-import config
+
 #sweeps:
 epochs = [32]
 batch_size = [16]
-lorap = [config.Global_R_LoRA]
-freezes = [9]
+lorap = [32]
+freezes = [10, 9]
+# Global_R_LoRA = 16
 #cos_lr = [True,False]
 #freeze = [1,2,3]
 #lr0 = [1e-5,1e-5,1e-5]
@@ -27,6 +29,7 @@ for e in epochs:
         for r in lorap:
             for f in freezes:
                 t = time.strftime("%Y-%m-%d_%H-%M-%S")
+                config.Global_R_LoRA = r # set the r for LoRA so it will be update in Ultralytics
                 model = MedRoad(weight_path, lora_r_param=r)
                 model.model.train(data=data_path,
                                   project=out_path,

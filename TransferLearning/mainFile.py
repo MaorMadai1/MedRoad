@@ -181,7 +181,7 @@ if __name__ == '__main__':
     epochs = [32]
     batch_size = [16]
     lorap = [32]
-    freezes = [9, 10]
+    freezes = [10, 9]
     # Global_R_LoRA = 16
     #cos_lr = [True,False]
     #freeze = [1,2,3]
