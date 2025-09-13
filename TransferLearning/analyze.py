@@ -133,7 +133,45 @@ if __name__ == "__main__":
     plt.savefig("precision_recall_per_config.png", dpi=300)
     plt.show()
 
-    # Create a figure with 2 bar charts (Precision and Recall)
+    target_classes = ["text", "fracture", "metal", "periostealreaction"]
+
+    # Create figure with one subplot per class
+    fig, axes = plt.subplots(1, len(target_classes), figsize=(16, 4), sharey=True)
+
+    for i, cls in enumerate(target_classes):
+        ax = axes[i]
+
+        precisions = []
+        recalls = []
+        runs = []
+
+        for _, row in df.iterrows():
+            if cls in row["Classes"]:
+                idx = row["Classes"].index(cls)
+                precisions.append(row["Precision"][idx])
+                recalls.append(row["Recall"][idx])
+                runs.append(f"{configs[row['Run']-1]}")
+
+        x = np.arange(len(runs))
+        width = 0.35
+
+        ax.bar(x - width / 2, precisions, width, label="Precision", color="skyblue")
+        ax.bar(x + width / 2, recalls, width, label="Recall", color="salmon")
+
+        ax.set_title(cls.capitalize(), fontsize=12)
+        ax.set_xticks(x)
+        ax.set_xticklabels(runs, rotation=45, ha="right", fontsize=6)
+        ax.set_ylim(0, 1)
+        if i == 0:
+            ax.set_ylabel("Score", fontsize=10)
+        ax.grid(axis="y", linestyle="--", alpha=0.6)
+
+    fig.legend(["Precision", "Recall"])
+
+    fig.tight_layout(rect=[0, 0, 1, 0.9])
+    plt.show()
+
+    # Create a figure with 2 bar charts (avg Precision and avg Recall)
     fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
 
     # Precision
@@ -148,6 +186,7 @@ if __name__ == "__main__":
     axes[1].set_title("Recall")
     axes[1].set_xticklabels(configs_permuted, rotation=45, ha="right")
     axes[1].grid(True, axis="y", linestyle="--", alpha=0.7)
-    plt.tight_layout(rect=[0, 0.1, 1, 0.95])  # leaves more space at the bottom
+    plt.title("Avg Precision and Avg Recall", fontsize=14)
+    plt.tight_layout(rect=[0, 0.1, 1, 0.95])
     plt.savefig("precision_recall_comparison.png")
 

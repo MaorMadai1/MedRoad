@@ -283,10 +283,10 @@ if __name__ == '__main__':
     imgsz = 640
 
     #sweeps:
-    epochs = [32]
+    epochs = [100]
     batch_size = [16]
-    lorap = [32]
-    freezes = [10, 9]
+    lorap = [0]
+    freezes = [None]
     # Global_R_LoRA = 16
     #cos_lr = [True,False]
     #freeze = [1,2,3]
@@ -309,7 +309,7 @@ if __name__ == '__main__':
                                       imgsz=imgsz,
                                       batch=bs,
                                       device=device,
-                                      freeze=f
+                                      freeze=f is not None
                                       )
 
                     print("**********************")
