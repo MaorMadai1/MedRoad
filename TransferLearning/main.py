@@ -1,16 +1,10 @@
-import torch.nn as nn
 import torch.utils.data
-from ultralytics import YOLO
-import itertools
-from loralib import Conv2d as LoRAConv2d
-import loralib as lora
-import os
-import pandas as pd
 import time
 import config
-from mainFile import MedRoad
-if __name__ == "__main__":
+from MedRoad import MedRoad
 
+if __name__ == '__main__':
+    # params:
     data_path = "../datasets/GRAZPEDWRI-DX/data.yaml"
     weight_path = "../YOLOv8_Small_RDD.pt"
     out_path = "../BaselineResults"
@@ -18,10 +12,10 @@ if __name__ == "__main__":
     imgsz = 640
 
     #sweeps:
-    epochs = [32]
+    epochs = [10]
     batch_size = [16]
-    lorap = [32]
-    freezes = [10, 9]
+    lorap = [4]
+    freezes = [9]
     #cos_lr = [True,False]
     #freeze = [1,2,3]
     #lr0 = [1e-5,1e-5,1e-5]
@@ -43,17 +37,8 @@ if __name__ == "__main__":
                                       imgsz=imgsz,
                                       batch=bs,
                                       device=device,
-                                      save=False,
-                                      freeze=f
+                                      freeze=f is not None
                                       )
-
-                    print("**********************")
-                    for name, module in model.model.named_modules():
-                        if isinstance(module, lora.Conv2dNew):
-                            print("LoRAConv2d found at:", name)
-                    total_params = sum(p.numel() for p in model.model.parameters() if p.requires_grad)
-                    print(f'Total number of trainable parameters: {total_params}')
-
                     model.model.val(data=data_path,
                                     project=out_path,
                                     name=f"TEST-time={t}-epochs={e}-batchsize={bs},lora={r},freeze={f}",

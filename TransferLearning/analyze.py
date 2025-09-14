@@ -171,22 +171,22 @@ if __name__ == "__main__":
     fig.tight_layout(rect=[0, 0, 1, 0.9])
     plt.show()
 
-    # Create a figure with 2 bar charts (avg Precision and avg Recall)
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
-
-    # Precision
-    axes[0].bar(configs_permuted, df["Precision"], color="skyblue")
-    axes[0].set_title("Precision")
-    axes[0].set_xticklabels(configs_permuted, rotation=45, ha="right")
-    axes[0].set_ylabel("Score")
-    axes[0].grid(True, axis="y", linestyle="--", alpha=0.7)
-
-    # Recall
-    axes[1].bar(configs_permuted, df["Recall"], color="lightgreen")
-    axes[1].set_title("Recall")
-    axes[1].set_xticklabels(configs_permuted, rotation=45, ha="right")
-    axes[1].grid(True, axis="y", linestyle="--", alpha=0.7)
-    plt.title("Avg Precision and Avg Recall", fontsize=14)
-    plt.tight_layout(rect=[0, 0.1, 1, 0.95])
-    plt.savefig("precision_recall_comparison.png")
+    # # Create a figure with 2 bar charts (avg Precision and avg Recall)
+    # fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
+    #
+    # # Precision
+    # axes[0].bar(configs_permuted, df["Precision"], color="skyblue")
+    # axes[0].set_title("Precision")
+    # axes[0].set_xticklabels(configs_permuted, rotation=45, ha="right")
+    # axes[0].set_ylabel("Score")
+    # axes[0].grid(True, axis="y", linestyle="--", alpha=0.7)
+    #
+    # # Recall
+    # axes[1].bar(configs_permuted, df["Recall"], color="lightgreen")
+    # axes[1].set_title("Recall")
+    # axes[1].set_xticklabels(configs_permuted, rotation=45, ha="right")
+    # axes[1].grid(True, axis="y", linestyle="--", alpha=0.7)
+    # plt.title("Avg Precision and Avg Recall", fontsize=14)
+    # plt.tight_layout(rect=[0, 0.1, 1, 0.95])
+    # plt.savefig("precision_recall_comparison.png")
 
