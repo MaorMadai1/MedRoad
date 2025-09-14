@@ -93,3 +93,19 @@ You can optionally visualize and summarize your training outputs.
    Execute the script from the project root:
    ```bash
    python TransferLearning/analyze.py
+   ```
+   
+
+## Credits
+
+We would like to thank the following resources and contributors:
+
+- **Ultralytics YOLOv8**: https://github.com/ultralytics/ultralytics  
+  Used as the base object detection framework.
+- **LoRA (Low-Rank Adaptation)**: Hu et al., 2021, https://github.com/microsoft/LoRA  
+  For the convolutional LoRA layer implementation
+- **Road Damage Dataset (RDD2022)**: Arya et al., 2022, https://github.com/oracl4/RoadDamageDetection
+  Used for pre-training.
+- **GRAZPEDWRI-DX Bone Fracture Dataset**: Nagy et al., 2022, https://www.kaggle.com/datasets/doantrungkien/grazpedwri-dx-dataset
+  Used as the target dataset.
+
