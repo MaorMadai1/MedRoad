@@ -33,7 +33,29 @@ from ultralytics import YOLO
 import torch
 import numpy as np
 
+
 def get_results(results, run_idx):
+    """
+    Extract relevant evaluation metrics from a YOLO model validation result.
+
+    Args:
+        results (ultralytics.engine.results.Results): YOLOv8 validation results object.
+        run_idx (int): Index of the current run/configuration (used for tracking).
+
+    Returns:
+        dict: Dictionary containing the following keys:
+            - Run: Run number (1-based)
+            - Precision: List of per-class precision values (rounded)
+            - Recall: List of per-class recall values (rounded)
+            - mAP@0.5: Mean Average Precision at IoU=0.5
+            - mAP@0.75: Mean Average Precision at IoU=0.75
+            - mAP@0.5:0.95: Mean Average Precision averaged over IoU thresholds 0.5 to 0.95
+            - Classes: List of class names
+            - Preprocess(ms): Time in milliseconds spent on preprocessing
+            - Inference(ms): Time in milliseconds spent on inference
+            - Postprocess(ms): Time in milliseconds spent on postprocessing
+            - Fitness: Optional fitness score from YOLO
+    """
     return {
         "Run": run_idx + 1,
         "Precision": np.round(results.box.p, 4),
@@ -52,11 +74,24 @@ def get_results(results, run_idx):
         "Fitness": results.box.fitness,
     }
 
-if __name__ == "__main__":
-    # Paths
-    results_dir = "../FinalResults"
-    dataset_yaml = "../datasets/GRAZPEDWRI-DX/data.yaml"  # replace with your test dataset YAML
 
+def evaluate(results_dir, dataset_yaml):
+    """
+       Evaluate multiple YOLO models stored in a structured directory.
+
+       Iterates over all TRAIN-* folders in the results directory, loads the
+       corresponding YOLO model, evaluates it on the provided dataset YAML, and
+       collects metrics into a Pandas DataFrame.
+
+       Args:
+           results_dir (str): Path to the parent results directory containing TRAIN-* folders.
+           dataset_yaml (str): Path to the dataset YAML file for evaluation.
+
+       Returns:
+           tuple:
+               - df (pd.DataFrame): DataFrame containing evaluation metrics for all runs.
+               - configs (list): List of string descriptions of each configuration.
+       """
     # Initialize results storage
     all_metrics = []
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -64,6 +99,7 @@ if __name__ == "__main__":
     bs = 16
     i = 0
     configs = []
+
     # Iterate over TRAIN folders
     for folder_name in os.listdir(results_dir):
         if not folder_name.startswith("TRAIN-"):
@@ -86,7 +122,7 @@ if __name__ == "__main__":
         print(f"Evaluating {folder_name}...")
 
         # Evaluate on dataset
-        results = model.val(data=dataset_yaml,device=device, imgsz=imgsz, batch=bs,save=False, plots=False)
+        results = model.val(data=dataset_yaml, device=device, imgsz=imgsz, batch=bs, save=False, plots=False)
 
         # Collect metrics
         metrics = get_results(results, i)
@@ -99,9 +135,20 @@ if __name__ == "__main__":
     # Save metrics to CSV
     df.to_csv("comparison_metrics.csv", index=False)
 
+    return df, configs
 
-    configs_permuted = [configs[i-1] for i in list(df['Run'])]
 
+def full_results_figure(df, configs):
+    """
+    Generate a bar chart figure showing Precision and Recall per class for each configuration.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing evaluation metrics from `evaluate()`.
+        configs (list): List of string descriptions of each configuration.
+
+    Saves:
+        precision_recall_per_config.png: Figure saved in the current working directory.
+    """
     num_runs = df["Run"].nunique()
     ncols = 3
     nrows = int(np.ceil(num_runs / ncols))
@@ -139,7 +186,20 @@ if __name__ == "__main__":
     plt.savefig("precision_recall_per_config.png", dpi=300)
     plt.show()
 
-    # Top Classes figure
+
+def top_class_figure(df, configs):
+
+    """
+    Generate bar charts showing Precision and Recall for selected four top classes across all configurations.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing evaluation metrics from `evaluate()`.
+        configs (list): List of string descriptions of each configuration.
+
+    Saves:
+        precision_recall_per_config_top_classes.png
+    """
+
     target_classes = ["text", "fracture", "metal", "periostealreaction"]
 
     # Create figure with one subplot per class
@@ -157,7 +217,7 @@ if __name__ == "__main__":
                 idx = row["Classes"].index(cls)
                 precisions.append(row["Precision"][idx])
                 recalls.append(row["Recall"][idx])
-                runs.append(f"{configs[row['Run']-1]}")
+                runs.append(f"{configs[row['Run'] - 1]}")
 
         x = np.arange(len(runs))
         width = 0.35
@@ -181,7 +241,19 @@ if __name__ == "__main__":
     plt.savefig("precision_recall_per_config_top_classes.png", dpi=300)
     plt.show()
 
-    # Top Classes best configs
+
+def top_class_best_configs_figure(df, configs):
+
+    """
+    Generate bar charts for the top classes across a set of pre-selected best configurations.
+
+    Args:
+        df (pd.DataFrame): DataFrame containing evaluation metrics from `evaluate()`.
+        configs (list): List of string descriptions of each configuration.
+
+    Saves:
+        precision_recall_per_config_top_classes_best_configs.png
+    """
 
     target_classes = ["text", "fracture", "metal"]
     best_configs_var = [[100, 0, None], [32, None, 10], [32, None, 9], [32, 32, 9], [32, 16, 10], [1, 0, 9]]
@@ -232,22 +304,17 @@ if __name__ == "__main__":
     plt.show()
 
 
-    # # Create a figure with 2 bar charts (avg Precision and avg Recall)
-    # fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
-    #
-    # # Precision
-    # axes[0].bar(configs_permuted, df["Precision"], color="skyblue")
-    # axes[0].set_title("Precision")
-    # axes[0].set_xticklabels(configs_permuted, rotation=45, ha="right")
-    # axes[0].set_ylabel("Score")
-    # axes[0].grid(True, axis="y", linestyle="--", alpha=0.7)
-    #
-    # # Recall
-    # axes[1].bar(configs_permuted, df["Recall"], color="lightgreen")
-    # axes[1].set_title("Recall")
-    # axes[1].set_xticklabels(configs_permuted, rotation=45, ha="right")
-    # axes[1].grid(True, axis="y", linestyle="--", alpha=0.7)
-    # plt.title("Avg Precision and Avg Recall", fontsize=14)
-    # plt.tight_layout(rect=[0, 0.1, 1, 0.95])
-    # plt.savefig("precision_recall_comparison.png")
+if __name__ == "__main__":
+    # Paths
+    results_dir = "../FinalResults"
+    dataset_yaml = "../datasets/GRAZPEDWRI-DX/data.yaml"  # replace with your test dataset YAML
+
+    df, configs = evaluate(results_dir, dataset_yaml)
+
+    full_results_figure(df, configs)
+
+    top_class_figure(df, configs)
+
+    top_class_best_configs_figure(df, configs)
+
 

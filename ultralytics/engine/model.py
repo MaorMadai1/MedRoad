@@ -28,6 +28,7 @@ from LoRAConv import Conv2dNew
 import loralib
 import torch.nn as nn
 
+
 def replace_conv_to_LoRa(model, r=2):
     """
     Recursively replace Conv2d layers with Conv2dNew.
@@ -48,6 +49,7 @@ def replace_conv_to_LoRa(model, r=2):
             setattr(model, name, lora_conv)
         else:
             replace_conv_to_LoRa(child, r)
+
 
 class Model(torch.nn.Module):
     """

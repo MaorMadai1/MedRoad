@@ -11,16 +11,13 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     imgsz = 640
 
-    #sweeps:
+    # sweeps parameters:
     epochs = [10]
     batch_size = [16]
     lorap = [4]
     freezes = [9]
-    #cos_lr = [True,False]
-    #freeze = [1,2,3]
-    #lr0 = [1e-5,1e-5,1e-5]
-    #lrf = [0.01,0.001]
 
+    # other hyperparamaters can be add here
 
     # Init-the model
     for e in epochs:
