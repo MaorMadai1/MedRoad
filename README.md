@@ -41,6 +41,20 @@ MedRoad/
 - **YOLOv8_Small_RDD.pt**: The pre-trained weights on Road Damage Dataset, used as initialization.
 
 ---
+## Model Overview
+
+Our main model is **MedRoad**, which wraps the custom YOLO architecture and incorporates the `LoRAConv.py` layer.
+
+- All YOLO hyperparameters can be specified by passing them to `MedRoad.train`.
+- We specifically set:
+  - **Batch size:** (`batch_size`)16  
+  - **LoRA parameter (`r`)**  
+  - **Number of training epochs (`epochs`)**
+
+These parameters are defined in `TransferLearning/main.py` and can be modified as needed.
+
+---
+---
 
 ## Prerequisites
 
