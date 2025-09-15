@@ -54,16 +54,20 @@ Our main model is **MedRoad**, which wraps the custom YOLO architecture and inco
 These parameters are defined in `TransferLearning/main.py` and can be modified as needed.
 
 ---
----
 
 ## Prerequisites
 
 Before running the code, make sure you have:
 
 - **Anaconda / Miniconda** installed  
-- GPU with CUDA support (if training or fine-tuning)  
+- GPU with CUDA support (if training or fine-tuning)
+- Downloaded dataset
 
 ---
+## Downloading the GRAZPEDWRI-DX Dataset
+
+This project uses the **GRAZPEDWRI-DX** bone fracture dataset, available on Kaggle:  
+[https://www.kaggle.com/datasets/doantrungkien/grazpedwri-dx-dataset](https://www.kaggle.com/datasets/doantrungkien/grazpedwri-dx-dataset)
 
 ## Setup Instructions
 
@@ -77,6 +81,7 @@ Follow these steps to get the code running.
 
    ```bash
    conda env create -f env/environment.yml
+
 
 ### 2. Update the paths in `TransferLearning/main.py` to match your local setup:
 
